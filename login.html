@@ -1,0 +1,385 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECE Component Inventory</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #071a36, #124e8c, #75c9f5);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 430px;
+            padding: 38px 30px;
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 24px;
+            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.25);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-icon {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            background: #e2f1ff;
+            color: #1262a3;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        h1 {
+            color: #102e50;
+            font-size: 25px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding: 5px;
+            margin-bottom: 25px;
+            background: #edf4fb;
+            border-radius: 12px;
+        }
+
+        .tabs label {
+            flex: 1;
+            padding: 12px 5px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 9px;
+            color: #536a82;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input[name="mode"] {
+            display: none;
+        }
+
+        #signin:checked ~ .tabs label[for="signin"],
+        #signup:checked ~ .tabs label[for="signup"] {
+            background: white;
+            color: #1262a3;
+            box-shadow: 0 2px 8px rgba(20, 65, 110, 0.1);
+        }
+
+        .field {
+            margin-bottom: 19px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            color: #243c56;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d5e1ed;
+            border-radius: 11px;
+            outline: none;
+            background: #fbfdff;
+            color: #1b3048;
+            font-size: 15px;
+        }
+
+        .field input:focus {
+            border-color: #2587d5;
+            box-shadow: 0 0 0 3px rgba(37, 135, 213, 0.12);
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 11px;
+            background: linear-gradient(100deg, #1262a3, #258fe0);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            opacity: 0.92;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #message {
+            margin-top: 17px;
+            min-height: 20px;
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            color: #8493a5;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="login-card">
+
+        <div class="brand">
+            <div class="brand-icon">EC</div>
+
+            <h1>ECE Component Inventory</h1>
+
+            <p class="subtitle">
+                Manage your electronics components easily.
+            </p>
+        </div>
+
+        <form id="loginForm">
+
+            <input type="radio" name="mode" id="signin" checked>
+            <input type="radio" name="mode" id="signup">
+
+            <div class="tabs">
+                <label for="signin">Sign In</label>
+                <label for="signup">Create Account</label>
+            </div>
+
+            <div class="field">
+                <label for="collegeName">College Name</label>
+                <input
+                    type="text"
+                    id="collegeName"
+                    placeholder="Enter your college name"
+                    autocomplete="organization"
+                    required
+                >
+            </div>
+
+            <div class="field">
+                <label for="collegeCode">College Code</label>
+                <input
+                    type="password"
+                    id="collegeCode"
+                    placeholder="Enter your college code"
+                    autocomplete="off"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="submit-button" id="submitButton">
+                Sign In
+            </button>
+
+            <p id="message" role="status" aria-live="polite"></p>
+
+        </form>
+
+        <div class="footer">
+            ECE Department · Component Management System
+        </div>
+
+    </main>
+
+    <script>
+        // STEP 1: Enter your existing Supabase project details here.
+        const SUPABASE_URL = " https://nqmogfzddgrihvvklmij.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY =
+            " sb_publishable_FgEl0IIr4xDTFfimp7WnVQ_gpVd07xi";
+
+        const form = document.getElementById("loginForm");
+        const collegeNameInput = document.getElementById("collegeName");
+        const collegeCodeInput = document.getElementById("collegeCode");
+        const submitButton = document.getElementById("submitButton");
+        const message = document.getElementById("message");
+        const signinRadio = document.getElementById("signin");
+        const signupRadio = document.getElementById("signup");
+
+        let supabaseClient = null;
+
+        function showMessage(text, success = false) {
+            message.textContent = text;
+            message.style.color = success ? "#16845b" : "#d04444";
+        }
+
+        function updateButtonText() {
+            submitButton.textContent = signupRadio.checked
+                ? "Create Account"
+                : "Sign In";
+
+            showMessage("");
+        }
+
+        signinRadio.addEventListener("change", updateButtonText);
+        signupRadio.addEventListener("change", updateButtonText);
+
+        // Initialize the Supabase connection.
+        try {
+            if (
+                SUPABASE_URL === "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE" ||
+                SUPABASE_PUBLISHABLE_KEY ===
+                    "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE"
+            ) {
+                showMessage(
+                    "Setup required: add your Supabase Project URL and Publishable Key."
+                );
+            } else if (!window.supabase) {
+                showMessage(
+                    "Supabase did not load. Check your internet connection."
+                );
+            } else {
+                supabaseClient = window.supabase.createClient(
+                    SUPABASE_URL,
+                    SUPABASE_PUBLISHABLE_KEY
+                );
+            }
+        } catch (error) {
+            console.error("Supabase initialization error:", error);
+            showMessage("Could not initialize Supabase. Check your settings.");
+        }
+
+        // Handle the form without refreshing the page.
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const collegeName = collegeNameInput.value.trim();
+            const collegeCode = collegeCodeInput.value.trim();
+
+            if (collegeName.length < 2) {
+                showMessage("Please enter your college name.");
+                return;
+            }
+
+            if (collegeCode.length < 4) {
+                showMessage("College code must contain at least 4 characters.");
+                return;
+            }
+
+            if (!supabaseClient) {
+                showMessage(
+                    "Supabase is not connected. Check your Project URL and Publishable Key."
+                );
+                return;
+            }
+
+            submitButton.disabled = true;
+
+            try {
+                let result;
+
+                if (signupRadio.checked) {
+                    showMessage("Creating your college account...", true);
+
+                    result = await supabaseClient.rpc(
+                        "register_college",
+                        {
+                            p_college_name: collegeName,
+                            p_college_code: collegeCode
+                        }
+                    );
+                } else {
+                    showMessage("Checking your college details...", true);
+
+                    result = await supabaseClient.rpc(
+                        "login_college",
+                        {
+                            p_college_name: collegeName,
+                            p_college_code: collegeCode
+                        }
+                    );
+                }
+
+                const { data, error } = result;
+
+                if (error) {
+                    console.error("Supabase request error:", error);
+                    showMessage("Request failed: " + error.message);
+                    return;
+                }
+
+                if (!data || data.success !== true) {
+                    showMessage(
+                        data?.message || "Unable to verify your college details."
+                    );
+                    return;
+                }
+
+                if (signupRadio.checked) {
+                    showMessage(
+                        "College account created successfully! Select Sign In to continue.",
+                        true
+                    );
+                } else {
+                    // Save the verified college information for the next page.
+                    // This alone does NOT provide secure authentication.
+                    sessionStorage.setItem(
+                        "ece_college_id",
+                        data.college_id
+                    );
+
+                    sessionStorage.setItem(
+                        "ece_college_name",
+                        data.college_name
+                    );
+
+                    showMessage("College details verified successfully.", true);
+
+                    // Open your existing inventory page.
+                    setTimeout(function () {
+                        window.location.href = "inventory.html";
+                    }, 1000);
+                }
+
+            } catch (error) {
+                console.error("Unexpected error:", error);
+                showMessage("Something went wrong. Please try again.");
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    </script>
+
+</body>
+</html>
